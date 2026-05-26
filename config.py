@@ -27,6 +27,14 @@ BATCH_SIZE_EMBEDDINGS = 8  # How many images/texts to embed at once
 
 # Database batch insert size
 DB_BATCH_SIZE = 50
+MAX_BATCH_RETRIES = 3
+FAILED_LOG_FILE = "failed_products.log"
+
+# Stale product tracking
+STALE_THRESHOLD = 2  # Delete after N consecutive runs without being seen
+
+# Embedding generation
+EMBEDDING_DELAY = 0.5  # Seconds between embedding generation calls
 
 # Source / brand
 SOURCE = "scraper-1stclass"
