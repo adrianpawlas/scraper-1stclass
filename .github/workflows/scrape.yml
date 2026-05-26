@@ -1,0 +1,68 @@
+name: Scrape 1stclass-vintage
+
+on:
+  schedule:
+    # Run every Monday at 4:00 AM UTC
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+    # Allow manual triggering from the GitHub Actions tab
+    inputs:
+      resume:
+        description: 'Skip already-imported products'
+        type: boolean
+        default: false
+        required: false
+      limit:
+        description: 'Max products to process (0 = all)'
+        type: number
+        default: 0
+        required: false
+      skip_embeddings:
+        description: 'Skip embedding generation'
+        type: boolean
+        default: false
+        required: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          ARGS=""
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            # Scheduled runs: only process new products to avoid re-processing everything
+            ARGS="--resume"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Manual runs: respect user inputs
+            if [[ "${{ github.event.inputs.resume }}" == "true" ]]; then
+              ARGS="$ARGS --resume"
+            fi
+            if [[ "${{ github.event.inputs.limit }}" != "0" ]]; then
+              ARGS="$ARGS --limit ${{ github.event.inputs.limit }}"
+            fi
+            if [[ "${{ github.event.inputs.skip_embeddings }}" == "true" ]]; then
+              ARGS="$ARGS --skip-embeddings"
+            fi
+          fi
+          python main.py $ARGS
