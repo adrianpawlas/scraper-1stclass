@@ -72,8 +72,8 @@ class SiglipEmbedder:
         for batch_start in range(0, len(processed_images), BATCH_SIZE_EMBEDDINGS):
             batch_imgs = processed_images[batch_start : batch_start + BATCH_SIZE_EMBEDDINGS]
             inputs = self.processor(images=batch_imgs, return_tensors="pt").to(self.device)
-            image_embeds = self.model.get_image_features(**inputs)
-            image_embeds = image_embeds / image_embeds.norm(p=2, dim=-1, keepdim=True)
+            outputs = self.model.get_image_features(**inputs)
+            image_embeds = outputs.pooler_output / outputs.pooler_output.norm(p=2, dim=-1, keepdim=True)
 
             for emb in image_embeds.cpu().tolist():
                 embeddings.append(emb)
@@ -106,8 +106,8 @@ class SiglipEmbedder:
                 return_tensors="pt",
             ).to(self.device)
 
-            text_embeds = self.model.get_text_features(**inputs)
-            text_embeds = text_embeds / text_embeds.norm(p=2, dim=-1, keepdim=True)
+            outputs = self.model.get_text_features(**inputs)
+            text_embeds = outputs.pooler_output / outputs.pooler_output.norm(p=2, dim=-1, keepdim=True)
             all_embeddings.extend(text_embeds.cpu().tolist())
 
         return all_embeddings
