@@ -183,9 +183,6 @@ def build_product_record(product: dict[str, Any]) -> dict[str, Any] | None:
     tags_raw = product.get("tags", "")
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else None
 
-    # Availability from first variant
-    is_available = variant.get("available", True) if variant else True
-
     # Build metadata
     metadata = {
         "title": title,
@@ -230,7 +227,6 @@ def build_product_record(product: dict[str, Any]) -> dict[str, Any] | None:
         "additional_images": additional_images,
         "second_hand": SECOND_HAND,
         "tags": tags,
-        "is_available": is_available,
         "metadata": json.dumps(metadata),
         "other": None,
         "affiliate_url": None,

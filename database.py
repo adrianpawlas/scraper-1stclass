@@ -56,12 +56,6 @@ def product_changed(scraped: dict[str, Any], existing: dict[str, Any]) -> bool:
     if sorted(scraped_tags) != sorted(existing_tags):
         return True
 
-    # Compare availability
-    scraped_avail = scraped.get("is_available")
-    existing_avail = existing.get("is_available")
-    if scraped_avail is not None and scraped_avail != existing_avail:
-        return True
-
     return False
 
 
