@@ -53,7 +53,7 @@ def parse_args():
     )
     parser.add_argument("--resume", action="store_true",
                         help="Skip unchanged products (smart diff)")
-    parser.add_argument("--limit", type=int, default=0,
+    parser.add_argument("--limit", type=float, default=0,
                         help="Max products to process (0 = all)")
     parser.add_argument("--skip-embeddings", action="store_true",
                         help="Skip embedding generation")
@@ -68,6 +68,8 @@ def main():
     # ------------------------------------------------------------------
     logger.info("Initializing Supabase connection...")
     db = SupabaseDB()
+
+    limit = int(args.limit)
 
     existing_products: dict[str, dict] = {}
     if args.resume:
@@ -84,9 +86,9 @@ def main():
         handles = fetch_product_urls(http_client)
         logger.info(f"Found {len(handles)} total products in the collection")
 
-        if args.limit > 0:
-            handles = handles[:args.limit]
-            logger.info(f"Limited to {len(handles)} products for testing")
+        if limit > 0:
+            handles = handles[:limit]
+            logger.info(f"Limited to {limit} products for testing")
 
         if not handles:
             logger.info("No products found. Exiting.")
