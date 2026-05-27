@@ -6,11 +6,18 @@ batch retry logic, and stale product cleanup.
 
 import json
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from typing import Any
 
 from supabase import create_client, Client
+
+
+# Regex to extract missing column name from PostgREST PGRST204 errors
+_PGRST204_RE = re.compile(
+    r"'message'\s*:\s*\"Could not find the '([^']+)' column of '([^']+)' in the schema cache\""
+)
 
 from config import (
     SUPABASE_URL,
@@ -159,6 +166,22 @@ class SupabaseDB:
                     break
                 except Exception as e:
                     last_error = str(e)
+
+                    # Check if this is a missing column error (PGRST204)
+                    # PostgREST caches the schema; if a column was added recently
+                    # or is genuinely missing, we remove it and retry immediately.
+                    pgrst_match = _PGRST204_RE.search(last_error)
+                    if pgrst_match and "PGRST204" in last_error:
+                        missing_col = pgrst_match.group(1)
+                        logger.warning(
+                            f"  Column '{missing_col}' not found in table. "
+                            f"Removing from batch and retrying (attempt {attempt}/{MAX_BATCH_RETRIES})"
+                        )
+                        for record in clean_batch:
+                            record.pop(missing_col, None)
+                        # Retry immediately without sleeping
+                        continue
+
                     logger.warning(
                         f"  Batch upsert attempt {attempt}/{MAX_BATCH_RETRIES} failed: {last_error}"
                     )
