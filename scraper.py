@@ -6,6 +6,7 @@ with pagination, then fetches full product details from /products/{handle}.json.
 
 import json
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 from bs4 import BeautifulSoup
@@ -88,6 +89,22 @@ def fetch_product_detail(handle: str, client: httpx.Client) -> dict[str, Any] | 
     if data:
         return data.get("product")
     return None
+
+
+def build_compressed_url(image_url: str) -> str:
+    """Compress an image URL via the images.weserv.nl caching proxy.
+
+    The proxy downloads the image, resizes it, converts to WebP,
+    and compresses it — all on-the-fly with no storage needed.
+    """
+    encoded_url = quote(image_url, safe="")
+    return (
+        f"https://images.weserv.nl/"
+        f"?url={encoded_url}"
+        f"&w=500"
+        f"&output=webp"
+        f"&q=50"
+    )
 
 
 def infer_category(title: str) -> str | None:
@@ -231,7 +248,7 @@ def build_product_record(product: dict[str, Any]) -> dict[str, Any] | None:
         "other": None,
         "affiliate_url": None,
         "country": None,
-        "compressed_image_url": None,
+        "compressed_image_url": build_compressed_url(main_image),
     }
 
     return record
